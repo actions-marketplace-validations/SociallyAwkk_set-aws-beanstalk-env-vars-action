@@ -14,9 +14,12 @@ aws configure set region $aws_region
 IFS=' ' read -ra ADDR <<< "$env_vars"
 for i in "${ADDR[@]}"; do
     IFS='=' read -ra KV <<< "$i"
-    aws elasticbeanstalk update-environment --application-name $application_name --environment-name $environment_name --option-settings Namespace=aws:elasticbeanstalk:application:environment,OptionName=${KV[0]},Value=${KV[1]}
-    while [[ "$(aws elasticbeanstalk describe-environments --application-name $application_name --environment-names $environment_name --query 'Environments[0].Status' --output text)" != "Ready" ]]; do
-        echo "Waiting for environment to become Ready..."
-        sleep 20
-    done
+    current_value=$(aws elasticbeanstalk describe-configuration-settings --application-name $application_name --environment-name $environment_name --query "ConfigurationSettings[0].OptionSettings[?OptionName=='${KV[0]}'].Value" --output text)
+    if [ "$current_value" != "${KV[1]}" ]; then
+        aws elasticbeanstalk update-environment --application-name $application_name --environment-name $environment_name --option-settings Namespace=aws:elasticbeanstalk:application:environment,OptionName=${KV[0]},Value=${KV[1]}
+        while [[ "$(aws elasticbeanstalk describe-environments --application-name $application_name --environment-names $environment_name --query 'Environments[0].Status' --output text)" != "Ready" ]]; do
+            echo "Waiting for environment to become Ready..."
+            sleep 20
+        done
+    fi
 done
