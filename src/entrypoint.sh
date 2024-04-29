@@ -21,5 +21,7 @@ for i in "${ADDR[@]}"; do
             echo "Waiting for environment to become Ready..."
             sleep 20
         done
+    else
+        echo "Variable ${KV[0]} is skipped as it already has the same value."
     fi
 done
